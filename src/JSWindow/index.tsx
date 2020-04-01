@@ -223,6 +223,11 @@ export class JSWindow extends Component<WindowProps, State> {
     }
     if (this.props.active!) this.foreground();
     this.update();
+
+    this.onWheel = this.onWheel.bind(this);
+    if (this.clientRef.current) {
+      this.clientRef.current.addEventListener('wheel', this.onWheel);
+    }
   }
   /**
    *React componentWillUnmount
@@ -239,6 +244,10 @@ export class JSWindow extends Component<WindowProps, State> {
       }
       node.removeEventListener("move", this.onMove.bind(this));
       node.removeEventListener("active", this.onActive.bind(this));
+    }
+
+    if (this.clientRef.current) {
+      this.clientRef.current.removeEventListener('wheel', this.onWheel);
     }
   }
   public componentDidUpdate() {
@@ -451,7 +460,6 @@ export class JSWindow extends Component<WindowProps, State> {
           Width={clientWidth}
           Height={clientHeight}
           style={this.props.clientStyle!}
-          onWheel={this.onWheel.bind(this)}
           onMouseMove={this.onMouseMove.bind(this)}
         >
           <div ref={this.zoomRef} style={{
@@ -859,11 +867,10 @@ export class JSWindow extends Component<WindowProps, State> {
     }});
   }
 
-  private onWheel(evt: React.MouseEvent) {
-    evt.stopPropagation();
-
-    const e: any = evt.nativeEvent;
+  private onWheel(e: any) {
+    e.stopPropagation();
     if ((e.ctrlKey === true || e.altKey === true) && e.deltaY) {
+      e.preventDefault();
       this.zoom(-Math.sign(e.deltaY), e.pageX, e.pageY);
     }
   }
