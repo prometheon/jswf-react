@@ -1,6 +1,6 @@
 {
-  "name": "@jswf/react",
-  "version": "1.0.9",
+  "name": "jswm",
+  "version": "1.0.10",
   "description": "Virtual Window for React",
   "main": "dist/index.js",
   "scripts": {
@@ -13,6 +13,7 @@
     "access": "public"
   },
   "keywords": [
+    "jswm",
     "jswf",
     "react",
     "VirtualWindow",
@@ -39,10 +40,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JavaScript-WindowFramework/jswf-react.git"
+    "url": "git+https://github.com/prometheon/jswf-react.git"
   },
   "bugs": {
-    "url": "https://github.com/JavaScript-WindowFramework/jswf-react/issues"
+    "url": "https://github.com/prometheon/jswf-react/issues"
   },
   "homepage": "https://ttis.croud.jp/?uuid=b292d429-dbad-49b5-8fed-6d268f4feaf0"
 }
