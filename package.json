@@ -1,6 +1,6 @@
 {
   "name": "jswm",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Virtual Window for React",
   "main": "dist/index.js",
   "scripts": {
@@ -24,13 +24,14 @@
   "author": "SoraKumo",
   "license": "MIT",
   "dependencies": {
+    "@types/socket.io-client": "^1.4.32",
     "react": "~16.13.1",
     "resize-observer-polyfill": "~1.5.1",
+    "socket.io-client": "^2.3.0",
     "styled-components": "~5.0.1"
   },
   "devDependencies": {
     "@jswf/manager": "^1.0.3",
-    "@types/react-dom": "~16.9.5",
     "@types/styled-components": "~5.0.1",
     "ts-loader": "^6.2.2",
     "typescript": "~3.8.3",

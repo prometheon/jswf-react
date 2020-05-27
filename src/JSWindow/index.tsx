@@ -1,3 +1,4 @@
+import io from 'socket.io-client'
 import ResizeObserver from "resize-observer-polyfill";
 import React, { ReactNode, Component, createRef } from "react";
 import { Manager, MovePoint,MEvent } from "@jswf/manager";
@@ -15,6 +16,7 @@ export enum WindowStyle {
   RESIZE = 32
 }
 export interface WindowProps {
+  id?: string | null;
   x?: number | null;
   y?: number | null;
   width?: number;
@@ -35,6 +37,7 @@ export interface WindowProps {
   onUpdate?: ((status: WindowInfo) => void) | null;
   onClose?: (() => void) | null;
   clientStyle?: React.CSSProperties;
+  socket?: typeof io.Socket | null;
 }
 type NonNullableType<T, K extends keyof T = keyof T> = {
   [P in K]-?: T[P];
@@ -87,6 +90,28 @@ interface MoveParams {
   width: number;
   height: number;
 }
+
+// Returns a function, that, as long as it continues to be invoked, will not
+// be triggered. The function will be called after it stops being called for
+// N milliseconds. If `immediate` is passed, trigger the function on the
+// leading edge, instead of the trailing.
+function debounce(func: any, wait: number, immediate=false) {
+  var timeout: any;
+  return function(x: any) {
+    // @ts-ignore
+    var context = this;
+    var args = arguments;
+    var later = function() {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+    var callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (callNow) func.apply(context, args);
+  };
+};
+
 /**
  *FrameWindow of React
  *
@@ -128,6 +153,7 @@ export class JSWindow extends Component<WindowProps, State> {
   private updateInfoHandle?: number;
   private windowInfo: WindowInfo;
   private windowInfoKeep: WindowInfo;
+  private socketSend: (state: any) => void;
   flagWindowState: boolean = false;
   /**
    *Creates an instance of JswfWindow.
@@ -136,6 +162,7 @@ export class JSWindow extends Component<WindowProps, State> {
    */
   public constructor(props: WindowProps) {
     super(props);
+    this.socketSend = debounce(this.socketSendNow, 10, true);
     let state: State;
 
     state = {
@@ -166,6 +193,7 @@ export class JSWindow extends Component<WindowProps, State> {
     this.state = state;
 
     this.windowInfo = {
+      id: props.id!,
       x: state.x,
       y: state.y,
       width: state.width,
@@ -192,7 +220,8 @@ export class JSWindow extends Component<WindowProps, State> {
       realX: 0,
       realY: 0,
       realWidth: 0,
-      realHeight: 0
+      realHeight: 0,
+      socket: null,
     };
     this.windowInfoKeep = { ...this.windowInfo };
   }
@@ -230,6 +259,14 @@ export class JSWindow extends Component<WindowProps, State> {
     this.onWheel = this.onWheel.bind(this);
     if (this.clientRef.current) {
       this.clientRef.current.addEventListener('wheel', this.onWheel);
+    }
+
+    if (this.props.socket) {
+      this.props.socket.on('message', (d: any) => {
+        if (d.target === this.props.id) {
+          this.setState(d.state);
+        }
+      });
     }
   }
   /**
@@ -376,7 +413,7 @@ export class JSWindow extends Component<WindowProps, State> {
         titleSize={this.state.titleSize}
         onTouchStart={this.onMouseDown.bind(this)}
         onMouseDown={this.onMouseDown.bind(this)}
-      >
+        >
         {WindowStyle.TITLE && (
           <Title
             ref={this.titleRef}
@@ -729,6 +766,16 @@ export class JSWindow extends Component<WindowProps, State> {
 
     return scale;
   }
+
+  private socketSendNow(state: any) {
+    if (this.props.socket?.connected && this.props.id) {
+      this.props.socket.send({
+        target: this.props.id,
+        state
+      });
+    }
+  }
+
   private onMove(e: MEvent): void {
     // if (WindowManager.frame == null) return;
     if (this.state.windowState === WindowState.MAX) return;
@@ -809,6 +856,7 @@ export class JSWindow extends Component<WindowProps, State> {
       width: pwidth
     };
     if (!this.moveHandle) {
+      this.socketSend(this.moveParams!);
       this.moveHandle = setTimeout(() => {
         this.setState(this.moveParams!);
         this.moveHandle = undefined;
@@ -844,6 +892,7 @@ export class JSWindow extends Component<WindowProps, State> {
       translateX: prevState.transformation.translateX + x,
       translateY: prevState.transformation.translateY + y,
     }}));
+    this.socketSend(this.state);
   }
 
   private zoom(deltaScale: number, x: number, y: number) {
@@ -862,13 +911,15 @@ export class JSWindow extends Component<WindowProps, State> {
     const translateX = translate(originX, this.state.transformation.originX, this.state.transformation.translateX);
     const translateY = translate(originY, this.state.transformation.originY, this.state.transformation.translateY);
 
-    this.setState({ transformation: {
+    const newState = { transformation: {
       originX: newOriginX,
       originY: newOriginY,
       translateX,
       translateY,
       scale: newScale,
-    }});
+    }};
+    this.setState(newState);
+    this.socketSend(newState);
   }
 
   private onWheel(e: any) {
