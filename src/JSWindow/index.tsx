@@ -33,6 +33,7 @@ export interface WindowProps {
   windowStyle?: number;
   windowState?: WindowState;
   onUpdate?: ((status: WindowInfo) => void) | null;
+  onClose?: (() => void) | null;
   clientStyle?: React.CSSProperties;
 }
 type NonNullableType<T, K extends keyof T = keyof T> = {
@@ -112,7 +113,8 @@ export class JSWindow extends Component<WindowProps, State> {
     windowStyle: 0xff,
     windowState: WindowState.NORMAL,
     clientStyle: {},
-    onUpdate: null
+    onUpdate: null,
+    onClose: null
   };
 
   private rootRef = createRef<HTMLDivElement>();
@@ -183,6 +185,7 @@ export class JSWindow extends Component<WindowProps, State> {
       windowState: state.windowState,
       realWindowState: state.boxEnumState,
       onUpdate: props.onUpdate!,
+      onClose: props.onClose!,
       clientWidth: 0,
       clientHeight: 0,
       clientStyle: props.clientStyle!,
@@ -437,6 +440,7 @@ export class JSWindow extends Component<WindowProps, State> {
                   }}
                   onClick={e => {
                     this._setWindowState(WindowState.HIDE);
+                    if (this.props.onClose) this.props.onClose();
                   }}
                 />
               )}
